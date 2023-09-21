@@ -14,7 +14,7 @@ Simple shell script for GPU and CPU temperature logging.
 
 ### Install
 ```
-git clone 
+git clone https://github.com/DEEPGadget/GPU_CPU_temp_logger.git
 ```
 
 ### Execution
