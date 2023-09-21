@@ -23,7 +23,7 @@ sudo bash temp_logger.sh
 ```
 
 ## Output
-You can see ```.log``` file of each gpu, avreage gpu temperature, and cpu 
+You can see ```.log``` file of each gpu, average gpu temperature, and cpu 
 
 ## Authors
 
