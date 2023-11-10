@@ -1,6 +1,9 @@
 #!/bin/bash
 
-while true; do
+
+TIMELIMIT=5 # Set time limit(Sec.)
+SECONDS=0
+while (( SECONDS < TIMELIMIT )); do
 	sleep 1 &
 	num_of_gpu=$(nvidia-smi --list-gpus | wc -l)
 	for ((gpu = 1; gpu <= $num_of_gpu; gpu++)); do
@@ -16,8 +19,9 @@ while true; do
 	average_temp=$(($gpu_temp_sum / $num_of_gpu))
 	echo $timestamp" "$average_temp >> gpu_avg.log
 
-	cpu_temp_raw=$(sensors | grep Package)
-	temp=$(echo $cpu_temp_raw | cut -d ' ' -f4)	
+	#cpu_temp_raw=$(sensors | grep Package)
+	cpu_temp_raw=$(sensors | grep -m1 Tctl)
+	temp=$(echo $cpu_temp_raw | cut -d ' ' -f2)
 	echo $timestamp" "$temp >> cpu_temp.log
 	wait
 done
