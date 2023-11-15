@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-TIMELIMIT=5 # Set time limit(Sec.)
+TIMELIMIT=$1 # Set time limit(Sec.)
 SECONDS=0
 while (( SECONDS < TIMELIMIT )); do
 	sleep 1 &
