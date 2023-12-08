@@ -12,7 +12,7 @@ dir = '/home/deepgadget/GPU_CPU_temp_logger'
 pattern = re.compile('gpu_\d.csv')
 filelst =  str(os.listdir(dir))# generate filname list and casting to single string 
 count = 1
-
+#add
 for _ in pattern.finditer(filelst):# matching keyword iteration 
     print(_.group())
     file = dir + '/' + str(_.group())
