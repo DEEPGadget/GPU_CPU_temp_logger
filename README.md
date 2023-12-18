@@ -34,3 +34,8 @@ Jinseo Choi
 
 * 0.1
     * Initial Release
+
+## TODO:
+* 하드코딩된 파라미터 입력 값 받아서 적용될 수 있도록 수정 
+* 파워 Usage 그래프 추가 
+* 데이터 측정 인터벌 수정 <- user가 간격 정할 수 있게 변경 
