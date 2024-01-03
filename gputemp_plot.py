@@ -1,3 +1,4 @@
+
 import matplotlib.pyplot as plt 
 import pandas as pd
 pd.options.plotting.backend = 'plotly'
@@ -8,13 +9,13 @@ import numpy as np
 import plotly.express as px 
 import plotly.graph_objects as go
 import random
+from plotly.subplots import make_subplots
+import sys
 
-dir = '/home/deepgadget/GPU_CPU_temp_logger'
+dir = '/home/irlab/GPU_CPU_temp_logger'
 pattern = re.compile('gpu_\d.csv')
 filelst =  str(os.listdir(dir))# generate filname list and casting to single string 
 count = 1
-label_arrow = [-75, -65, -55, -35, 35, 55, 75]
-rnd_list = random.sample(range(0,8),8)
 
 for _ in pattern.finditer(filelst):# matching keyword iteration 
     print(_.group())
@@ -25,73 +26,74 @@ for _ in pattern.finditer(filelst):# matching keyword iteration
 
     if count == 1: 
         global concat_df 
-        concat_df = df = df.drop(df.columns[[2,3]], axis=1)
-        global fig
-        fig = concat_df.plot(kind='line',
-                             x='Timestamp(sec.)',
-                             y='GPU'+str(count), 
-                             title='DG5W-4090-6 Burning Test (48hr.)')
+        concat_df = df.drop(df.columns[[2,3]], axis=1)
     else:
         print(concat_df)
         concat_df = concat_df.join(df['GPU'+str(count)])
-    fig.add_scatter(x=concat_df['Timestamp(sec.)'],
-                    y=concat_df['GPU'+str(count)], 
-                    mode='lines', 
-                    name='GPU'+str(count))
-    print(concat_df)
-    df_deldup = concat_df.drop_duplicates(['GPU'+str(count)], keep = 'first', ignore_index = True)
-    peak_val_y = df_deldup['GPU'+str(count)].max()
-    peak_val_x = df_deldup[df_deldup['GPU'+str(count)] == peak_val_y]['Timestamp(sec.)'].values[0]
-    fig.add_annotation(x=peak_val_x, 
+    count += 1
+
+print(concat_df)
+concat_df['Timestamp(sec.)'] = concat_df['Timestamp(sec.)'].str[2:19]
+fig = make_subplots(rows=count-1, cols=1,
+                    x_title = '<b>Timestamp(sec.)</b>',
+                    y_title = '<b>GPU Chipset Temperature(°C)</b>')
+
+#                    x_title=dict(text='<b>Timestamp(sec.)</b>',
+#                                 font=dict(family = "Arial",
+#                                 size=23)),                            
+#                    y_title=dict(text='<b>GPU Chipset Temperature(°C)</b>',
+#                                 font=dict(family = "Arial",
+#                                 size=23)))
+ 
+for i in range(1,count):
+    deldup_df = concat_df.drop_duplicates(['GPU'+str(i)], keep = 'first',ignore_index = True)
+    peak_val_y = deldup_df['GPU'+str(i)].max()
+    peak_val_x = deldup_df[deldup_df['GPU'+str(i)] == peak_val_y]['Timestamp(sec.)'].values[0]
+    fig.append_trace(go.Scatter(
+            x=concat_df['Timestamp(sec.)'].values,
+            y=concat_df['GPU'+ str(i)],
+            name='GPU '+str(i)),
+            row=i, col=1)
+    fig.add_annotation(x=peak_val_x,
                        y=peak_val_y,
                        font=dict(family="Courier New, monospace", size=13, color="black"),
                        align = "center",
                        arrowwidth=2,
                        arrowcolor="#636363",
-                       text='<b>GPU'+str(count)+' peak:' + str(peak_val_y)+'°C</b>',
+                       text='<b>GPU'+str(i)+' peak:' + str(peak_val_y)+'°C</b>',
                        showarrow=True,
                        arrowhead=1,
-                       ay = label_arrow[rnd_list[count]]) 
-    count += 1
-
-
-print("concat_df", concat_df)
-
-fig.update_xaxes(#ticks="inside",
-                 tickwidth=2,
-                 title_font = {"size":20},
-                 automargin = True,
-                 #tickangle=30,
-                 minor=dict(ticklen=2, tickcolor="black"))#,showgrid=True))
+                       ay = -35,
+                       row=i,
+                       col=1)
 
 fig.update_yaxes(range=[0, 100],
                  ticks="inside",
                  tickwidth=2,
-                 title_font = {"size":20})
-#fig.show()
-fig.update_layout(font_family="Arial",
-                  font_color ="black",
-                  width=1600,
-                  height=700,
-                  title=dict(text='<b>DG5W-4090-4 Burning Test (48hr., FAN:67)</b>',
-                             font=dict(family = "Arial",
-                             size=25,
-                             color='#000000'),
+                 title_font = {"size":10})
+fig.update_xaxes(ticks="inside",
+                 tickwidth=2,
+                 title_font = {"size":10})
+
+
+fig.update_layout(height=700,
+                  width=1400, 
+                  title=dict(text='<b>'+str(sys.argv[1])+' Burning Test ' + '(' + str(sys.argv[2]) + 'hours)' + '</b>',
+                              font=dict(family = "Arial",
+                              size=25,
+                              color='#000000'),
                              x = 0.5,
                              y = 0.94,
                              xanchor = "center",
                              yanchor = "middle"),
-                  xaxis_title='<b>Timestamp(sec.)</b>',
-                  yaxis_title='<b>GPU Chipset Temperature(°C)',
-                  legend=dict(orientation="h",
+                 legend=dict(orientation="h", 
                               yanchor="bottom",
                               y=1.02,
                               xanchor="right",
                               borderwidth=1,
                               x=1),
-                  font=dict(family="Arial",
-                            size=18,
-                            color="black"))
-
-
+                  xaxis = dict(tickfont = dict(size=12)))
+                  #font=dict(family="Arial",
+                  #          size=18,
+                  #          color="black"))
 fig.write_image("output.png")
