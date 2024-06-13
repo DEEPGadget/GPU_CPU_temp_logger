@@ -11,6 +11,7 @@ Simple shell script for GPU and CPU temperature logging.
 * CUDA 12.2 toolkit
 * [gpu-burn](https://github.com/wilicc/gpu-burn)
 * [stress](https://howtoinstall.co/package/stress)
+* lm-sensors
 
 ### Install
 ```
@@ -19,11 +20,11 @@ git clone https://github.com/DEEPGadget/GPU_CPU_temp_logger.git
 
 ### Execution
 ```
-sudo bash temp_logger.sh
+sudo bash temp_logger.sh <sec>
 ```
 
 ## Output
-You can see ```.log``` file of each gpu, average gpu temperature, and cpu 
+You can see ```.csv``` file of each gpu, average gpu temperature, and cpu 
 
 ## Authors
 
