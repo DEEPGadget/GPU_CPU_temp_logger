@@ -1,8 +1,11 @@
 #/bin/bash
 TIMELIMIT=$1 # Set time limit(Sec.)
 SECONDS=0
-cpuinfo=$(lscpu | grep "Model name")
-whichcpu=${cpuinfo:20:24}
+cpuinfo=$(lscpu | grep "Model name" | head -1)
+# in Ubuntu 
+#whichcpu=${cpuinfo:20:24}
+# in rhel 8.8
+whichcpu=${cpuinfo:11:18}
 
 while (( SECONDS < TIMELIMIT )); do
         sleep 5 &
