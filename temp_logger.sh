@@ -13,7 +13,7 @@ while (( SECONDS < TIMELIMIT )); do
 
         for ((gpu = 1; gpu <= $num_of_gpu; gpu++)); do
                 timestamp=$(date +%F_%T)
-                smi=$(nvidia-smi --query-gpu=timestamp,temperature.gpu,gpu_bus_id,gpu_name --format=csv,noheader | sed -n "$gpu"p)
+                smi=$(nvidia-smi --query-gpu=temperature.gpu,power.draw,gpu_bus_id,gpu_name --format=csv,noheader | sed -n "$gpu"p)
                 echo $timestamp,$smi >> gpu_$gpu.csv &
 
         done
