@@ -1,67 +1,65 @@
-#/bin/bash
-TIMELIMIT=$1 # Set time limit(Sec.)
-SECONDS=0
-cpuinfo=$(lscpu | grep "Model name" | head -1)
-# in Ubuntu 
-#whichcpu=${cpuinfo:20:24}
-# in rhel 8.8
-whichcpu=${cpuinfo:11:18}
-# in Ubuntu 2
-#whichcpu=${cpuinfo:20:19}
-while (( SECONDS < TIMELIMIT )); do
-        sleep 5 &
-        num_of_gpu=$(nvidia-smi --list-gpus | wc -l)
+#!/bin/bash
 
-        for ((gpu = 1; gpu <= $num_of_gpu; gpu++)); do
-                timestamp=$(date +%F_%T)
-                smi=$(nvidia-smi --query-gpu=temperature.gpu,power.draw,gpu_bus_id,gpu_name --format=csv,noheader | sed -n "$gpu"p)
-                echo $timestamp,$smi >> gpu_$gpu.csv &
+usage() {
+	    echo "Usage: $0 <interval_in_seconds> <total_duration_in_seconds>"
+	        exit 1
+	}
+	
+	# 인자 확인
+if [ $# -ne 2 ]; then
+    usage
+fi
+	    
+# 측정 간격 및 총 측정 시간 설정
+INTERVAL=$1
+DURATION=$2
+		    
+# 로그 파일 경로 설정
+LOG_FILE="temperature_log.txt"
+		    
+# 총 반복 횟수 계산
+REPEAT_COUNT=$((DURATION / INTERVAL))
 
-        done
-        all_temp=$(nvidia-smi --query-gpu=timestamp,temperature.gpu --format=csv,noheader | cut -d ',' -f2)
-        gpu_1=$(echo $all_temp | cut -d ' ' -f1)
-        gpu_temp_sum=0
-        for each_gpu in $all_temp; do
-                gpu_temp_sum=$(($gpu_temp_sum+$each_gpu))
-        done
-        # timestamp=$(nvidia-smi --query-gpu=timestamp,temperature.gpu,gpu_bus_id --format=csv,noheader | sed -n 1p | cut -d ',' -f1)
-        timestamp=$(date +%F_%T)
-        average_temp=$(($gpu_temp_sum / $num_of_gpu))
-        echo $timestamp" "$average_temp >> gpu_avg.csv
+NUM_GPUS=$(nvidia-smi --query-gpu=count --format=csv,noheader,nounits | sort | uniq)
+HEADER="Timestamp, NVMe_Temperature, CPU0_Tctl, CPU1_Tctl"
+for ((j=0; j<NUM_GPUS; j++))
+do
+	HEADER="$HEADER, GPU${j}_Temperature"
+done
 
-        #cpu_temp_raw=$(sensors | grep Package)
-        if [ $whichcpu == "Intel(R)" ] ; then
-                num_of_cpu=$(sensors | grep Package | wc -l)
-                if [ $num_of_cpu -eq 2 ] ; then
-                        cpu1_sensor=$(sensors | grep "Package id 0")
-                        cpu2_sensor=$(sensors | grep "Package id 1")
-                        cpu1=$(echo $cpu1_sensor | cut -d ' ' -f4)
-                        cpu2=$(echo $cpu2_sensor | cut -d ' ' -f4)
-                        cpu1_temp=${cpu1:1:4}
-                        cpu2_temp=${cpu2:1:4}
-                        echo $timestamp,$cpu1_temp,$cpu2_temp >> cpu_temp.csv
-                else
-                        cpu1_sensor=$(sensors | grep "Package id 0")
-                        cpu1=$(echo $cpu1_sensor | cut -d ' ' -f4)
-                        cpu1_temp=${cpu1:1:4}
-                        echo $timestamp,$cpu1_temp >> cpu_temp.csv
-                fi
-        else
-                num_of_cpu=$(sensors | grep Tctl | wc -l)
-                if [ $num_of_cpu -eq 2 ] ; then
-                        cpu1_sensor=$(sensors | grep "Tctl 0")
-                        cpu2_sensor=$(sensors | grep "Tctl 1")
-                        cpu1=$(echo $cpu1_sensor | cut -d ' ' -f4)
-                        cpu2=$(echo $cpu2_sensor | cut -d ' ' -f4)
-                        cpu1_temp=${cpu1:1:4}
-                        cpu2_temp=${cpu2:1:4}
-                        echo $timestamp,$cpu1_temp,$cpu2_temp >> cpu_temp.csv
-                else
-                        cpu1_sensor=$(sensors | grep "Tctl")
-                        cpu1=$(echo $cpu1_sensor | cut -d ' ' -f4)
-                        cpu1_temp=${cpu1:1:4}
-                        echo $timestamp,$cpu1_temp >> cpu_temp.csv
-                fi
-        fi
-        wait
+HEADER="$HEADER, MEM_TOTAL_MB, MEM_USED_MB"
+echo $HEADER > $LOG_FILE
+
+# 루프 시작
+for ((i=0; i<REPEAT_COUNT; i++))
+do
+	# 현재 시간 가져오기
+	CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+				        
+	# NVMe 온도 정보 가져오기
+	NVME_TEMP=$(nvme smart-log /dev/nvme0n1 | grep 'temperature' | awk '{print $3"°C"}')
+					        
+	# CPU 온도 정보 가져오기
+	CPU_TEMP0=$(sensors | grep 'Tctl' | awk '/Tctl/ {count++; if (count==1) print $2}')
+	CPU_TEMP1=$(sensors | grep 'Tctl' | awk '/Tctl/ {count++; if (count==2) print $2}')
+					        
+	# 메모리 온도 정보 가져오기 (예: DDR 메모리 온도)
+	# MEM_TEMP=$(sensors | grep 'temp1' | awk '{print $2}')
+							        
+	# 메모리 사용량 정보 가져오기
+	MEM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')
+	MEM_USED=$(free -m | awk '/Mem:/ {print $3}')
+				
+	# GPU info
+	GPU_TEMPS=""
+	for ((j=0; j<NUM_GPUS; j++))
+	do
+		GPU_TEMP=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits -i $j | awk '{print $1"°C"}')
+		GPU_TEMPS="$GPU_TEMPS, $GPU_TEMP"
+	done	
+	# 로그 파일에 시간과 온도 정보 저장
+	echo "$CURRENT_TIME, $NVME_TEMP, $CPU_TEMP0, $CPU_TEMP1 $GPU_TEMPS, ${MEM_TOTAL}MB, ${MEM_USED}MB" >> $LOG_FILE
+										    
+	# 설정된 간격만큼 대기
+	sleep $INTERVAL
 done
