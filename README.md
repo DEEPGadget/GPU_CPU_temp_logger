@@ -66,7 +66,7 @@ Timestamp, NVMe_Temperature, CPU0_Tctl, CPU1_Tctl, GPU0_Temperature, GPU1_Temper
 python3 plot.py thermo_data.csv "DG4R-A6000-8 stress test(24hr.)"
 ```
 ## Output
-Few seconds later, the webpage is popped up and you can check the linear graph of thermo data of GPUs.
+Few seconds later, the webpage is popped up and you can check the linear graph of the thermal data from the GPU.
 And also the .png image file is generated exist path. This data shows 24 hour GPU stress test in server that consist of 8 of NVIDIA RTX A6000 GPUs cooled by our [DLC](https://deepgadget.com/Dg4r/?lang=en)(Direct-to-chip Liquid Cooling) system. 
 ![image](https://github.com/user-attachments/assets/f9a1b589-5030-4645-bfd5-738186623848)
 ![image](https://github.com/user-attachments/assets/09265d84-d0cf-49cf-82b8-b3a04cbcadbe)
