@@ -32,9 +32,6 @@ done
 HEADER="$HEADER, MEM_TOTAL_MB, MEM_USED_MB"
 echo $HEADER > $LOG_FILE
 
-
-
-
 # 루프 시작
 for ((i=0; i<REPEAT_COUNT; i++))
 do
