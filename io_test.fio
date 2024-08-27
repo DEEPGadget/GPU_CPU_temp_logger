@@ -9,6 +9,6 @@ runtime=120
 numjobs=4
 
 [job1]
-filename=/dev/sdb
+filename=/tmp/dummy
 rw=randrw
 size=100G
