@@ -23,13 +23,13 @@ REPEAT_COUNT=$((DURATION / INTERVAL))
 NUM_GPUS=$(nvidia-smi --query-gpu=count --format=csv,noheader,nounits | sort | uniq)
 NUM_CPUS=$(sensors | grep -i 'k10temp-pci' | wc -l)
 
-HEADER="Timestamp, NVMe_Temperature"
+HEADER="Timestamp, NVMe_Temperature, CPU_temperature "
 for ((j=0; j<NUM_GPUS; j++))
 do
 	HEADER="$HEADER, GPU${j}_Temperature"
 done
 
-HEADER="$HEADER, MEM_TOTAL_MB, MEM_USED_MB"
+HEADER="$HEADER, MEM_TOTAL_MB, MEM_USED_MB "
 echo $HEADER > $LOG_FILE
 
 # 루프 시작
