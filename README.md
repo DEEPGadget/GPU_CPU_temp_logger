@@ -30,7 +30,7 @@ sudo chmod +x ./temp_logger
 
 ### Run(temp_logger.sh)
 ```
-# temp_logger.sh <interval sec> <timeout sec>
+# temp_logger.sh <interval sec> <timeout sec> <--no-gpu>
 sudo ./temp_logger.sh 5 120
 ```
 ## Output
