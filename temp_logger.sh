@@ -132,7 +132,7 @@ for ((i=0; i<REPEAT_COUNT; i++)); do
     # Collect Wormhole N300 temperatures if enabled
     WORMHOLE_TEMPS=""
     if [ "$NO_WORMHOLE" == "false" ]; then
-        WORMHOLE_TEMPS=$(sensors | grep -A 3 -E 'wormhole-pci-[0-9]+' | grep 'asic1_temp' | awk '{gsub(/[+°C]/, "", $2); printf "%s,", $2}' | sed 's/,$//')
+        WORMHOLE_TEMPS=$(sensors | grep -A 3 -E 'wormhole-pci-[0-f]+' | grep 'asic1_temp' | awk '{gsub(/[+°C]/, "", $2); printf "%s,", $2}' | sed 's/,$//')
     fi
 
     # Assemble the log entry
