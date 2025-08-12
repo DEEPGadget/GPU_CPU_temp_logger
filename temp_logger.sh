@@ -87,7 +87,10 @@ HEADER="Timestamp"
 if [ "$NO_NVME" == "false" ]; then
     HEADER="$HEADER,NVMe_Temperature"
 fi
-HEADER="$HEADER,CPU_Temperature"
+#HEADER="$HEADER,CPU_Temperature"
+for  ((j=0; j<NUM_CPUS; j++)); do
+	HEADER="$HEADER,CPU${j}_Temperature"
+done
 if [ "$NO_GPU" == "false" ]; then
     for ((j=0; j<NUM_GPUS; j++)); do
         HEADER="$HEADER,GPU${j}_Temperature"
