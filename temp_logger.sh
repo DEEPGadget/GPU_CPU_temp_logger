@@ -60,10 +60,19 @@ for cmd in sensors free; do
     fi
 done
 
-# Check for nvidia-smi if GPU monitoring is enabled
-if [ "$NO_GPU" == "false" ] && ! command -v nvidia-smi &> /dev/null; then
-    echo "Warning: nvidia-smi command not found. GPU temperatures will not be recorded."
-    NO_GPU=true
+
+# Determine GPU monitoring backend (NVIDIA: nvidia-smi, AMD: rocm-smi)
+GPU_BACKEND="none"
+
+if [ "$NO_GPU" == "false" ]; then
+    if command -v nvidia-smi &> /dev/null; then
+        GPU_BACKEND="nvidia"
+    elif command -v rocm-smi &> /dev/null; then
+        GPU_BACKEND="amd"
+    else
+        echo "Warning: neither nvidia-smi nor rocm-smi command found. GPU temperatures will not be recorded."
+        NO_GPU=true
+    fi
 fi
 
 # Check if nvme command is available when NVMe monitoring is enabled
@@ -74,7 +83,13 @@ fi
 
 # Get GPU count if monitoring is enabled
 if [ "$NO_GPU" == "false" ]; then
-    NUM_GPUS=$(nvidia-smi --query-gpu=count --format=csv,noheader,nounits | sort | uniq)
+    if [ "$GPU_BACKEND" == "nvidia" ]; then
+        NUM_GPUS=$(nvidia-smi -L 2>/dev/null | wc -l)
+    elif [ "$GPU_BACKEND" == "amd" ]; then
+        NUM_GPUS=$(rocm-smi -i 2>/dev/null | grep -oE 'GPU\[[0-9]+\]' | sort -u | wc -l)
+    else
+        NUM_GPUS=0
+    fi
 else
     NUM_GPUS=0
 fi
@@ -115,7 +130,7 @@ for ((i=0; i<REPEAT_COUNT; i++)); do
     # Collect CPU temperatures
     CPU_TEMPS=""
     for ((j=0; j<NUM_CPUS; j++)); do
-        CPU_TEMP=$(sensors | awk -v cpu=$((j+1)) '/Tctl/ {count++; if (count==cpu) {gsub(/[+°C]/, "", $2); printf("%d", $2 + 0.5); exit}}')
+        CPU_TEMP=$(sensors | awk -v cpu=$((j+1)) '/Tccd1/ {count++; if (count==cpu) {gsub(/[+°C]/, "", $2); printf("%d", $2 + 0.5); exit}}')
         CPU_TEMPS="$CPU_TEMPS,$CPU_TEMP"
     done
 
@@ -127,7 +142,16 @@ for ((i=0; i<REPEAT_COUNT; i++)); do
     GPU_TEMPS=""
     if [ "$NO_GPU" == "false" ]; then
         for ((j=0; j<NUM_GPUS; j++)); do
-            GPU_TEMP=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits -i $j)
+            if [ "$GPU_BACKEND" == "nvidia" ]; then
+                GPU_TEMP=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits -i "$j" 2>/dev/null)
+            elif [ "$GPU_BACKEND" == "amd" ]; then
+                # Typical output example contains "GPU[0] : Temperature: 35.0°C"
+		GPU_TEMP=$(rocm-smi -d "$j" -t 2>/dev/null | awk -F':' '/GPU\[[0-9]+\].*Temperature \(Sensor edge\)/{v=$NF; gsub(/[^0-9.]/,"",v); if(v!=""){printf("%d", v+0.5); exit}}'); GPU_TEMP=${GPU_TEMP:-"N/A"}
+            else
+                GPU_TEMP=""
+            fi
+    
+            GPU_TEMP=${GPU_TEMP:-"N/A"}
             GPU_TEMPS="$GPU_TEMPS,$GPU_TEMP"
         done
     fi
